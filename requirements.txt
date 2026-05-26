@@ -1,0 +1,54 @@
+1. Dependency & Tech Stack List :
+To run this project, we need a Python environment(here I will assume as vscode as I have used this) with the following libraries. 
+
+opencv-python==4.9.0.80
+opencv-contrib-python==4.9.0.80
+numpy>=1.24.0
+Note: opencv-contrib-python is essential because it contains the cv2.legacy module required for the CSRT tracker.
+
+2. Architecture & Execution
+Smart Vehicle Tracking Engine
+An advanced computer vision system designed for robust vehicle tracking in complex traffic scenarios. 
+This project implements a Sensor Fusion approach, combining visual object tracking with a predictive Kalman Filter (Motion Model) 
+to overcome occlusions and distractions.
+
+Architecture :
+The system operates on a "Dual-Source" fusion logic:
+
+Visual Tracker (CSRT): Provides high-precision localization during clear paths.
+
+Kalman Filter (Motion Model): Acts as the "Brain." By enforcing a Constant Velocity model, 
+it maintains the target's trajectory when the visual tracker is occluded or hijacked by external objects (e.g., motorbikes, other cars).
+Anomaly Gateway: A real-time threshold monitoring system that detects when the tracker has been hijacked and automatically switches control to the physics model, ensuring "Iron Box" stability.
+
+Execution Steps:
+Preparation: Ensure that we have Python installed and the required libraries:
+
+
+Configuration: we need to first Update the video_path variable at the top of main.py to point out our target video file (e.g., car_1.mp4 or car_3.mp4).
+
+Launch: we then Run the script from the dedicated terminal:
+
+Target Selection:
+Once the window pops up, use the mouse to Click and Drag a precise bounding box around the target vehicle.(try to make it a bit small)
+Press ENTER or SPACEBAR to lock your selection.
+
+Monitoring: The Heads-Up Display (HUD) will track the vehicle.
+
+Green State: Tracking locked (Visual data trusted).
+
+Orange State: Occlusion detected (motion model predicting trajectory).
+
+Termination: Press 'q' at any time to safely exit the application.('q' stands for quit so I have taken q)
+
+3. User Manual for Build Instructions
+
+Pro-Tips for Perfect Tracking : 
+Initialization: When prompted to draw a box, "Tight is Right." Avoid including large amounts of background road or neighboring vehicles in your initial selection, as this provides a cleaner visual template for the tracker.
+
+Video Format: The code is optimized for .mp4 files. Ensure your video has a steady framerate for the best Kalman Filter performance.
+
+Handling Occlusion: If you notice a minor drift during a very long occlusion, simply pause the video and re-select the target, or adjust the MAX_ALLOWED_JUMP threshold in the code if your video has faster-moving traffic.
+
+Environment: If the tracker fails to initialize, ensure that you have opencv-contrib-python installed, as standard OpenCV builds often exclude the legacy tracking modules.
+
