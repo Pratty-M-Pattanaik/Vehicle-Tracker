@@ -18,12 +18,11 @@ The system operates on a "Dual-Source" fusion logic:
 Visual Tracker (CSRT): Provides high-precision localization during clear paths.
 
 Kalman Filter (Motion Model): Acts as the "Brain." By enforcing a Constant Velocity model, 
-it maintains the target's trajectory when the visual tracker is occluded or hijacked by external objects (e.g., motorbikes, other cars).
-Anomaly Gateway: A real-time threshold monitoring system that detects when the tracker has been hijacked and automatically switches control to the physics model, ensuring "Iron Box" stability.
+it maintains the target's trajectory when the visual tracker is occluded or obstructed by external objects (e.g., motorbikes, other cars).
+Anomaly Gateway: A real-time threshold monitoring system that detects when the tracker has been obstructed and automatically switches control to the motion model, ensuring stability.
 
 Execution Steps:
 Preparation: Ensure that we have Python installed and the required libraries:
-
 
 Configuration: we need to first Update the video_path variable at the top of main.py to point out our target video file (e.g., car_1.mp4 or car_3.mp4).
 
@@ -44,6 +43,7 @@ Termination: Press 'q' at any time to safely exit the application.('q' stands fo
 3. User Manual for Build Instructions
 
 Pro-Tips for Perfect Tracking : 
+
 Initialization: When prompted to draw a box, "Tight is Right." Avoid including large amounts of background road or neighboring vehicles in your initial selection, as this provides a cleaner visual template for the tracker.
 FPS Monitoring: we Monitor the FPS counter during operation. If the value drops significantly (e.g., below 20 FPS), it may indicate that our hardware is struggling with the current video resolution. we will Consider resizing our input video to 640x480 for better performance.
 Video Format: The code is optimized for .mp4 files. Ensure your video has a steady framerate for the best Kalman Filter performance.
