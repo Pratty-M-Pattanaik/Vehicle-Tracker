@@ -31,7 +31,7 @@ Launch: we then Run the script from the dedicated terminal:
 
 Target Selection:
 Once the window pops up, use the mouse to Click and Drag a precise bounding box around the target vehicle.(try to make it a bit small)
-Press ENTER or SPACEBAR to lock your selection.
+Press ENTER to lock your selection.
 
 Monitoring: The Heads-Up Display (HUD) will track the vehicle.
 
@@ -45,7 +45,7 @@ Termination: Press 'q' at any time to safely exit the application.('q' stands fo
 
 Pro-Tips for Perfect Tracking : 
 Initialization: When prompted to draw a box, "Tight is Right." Avoid including large amounts of background road or neighboring vehicles in your initial selection, as this provides a cleaner visual template for the tracker.
-FPS Monitoring: Monitor the FPS counter during operation. If the value drops significantly (e.g., below 20 FPS), it may indicate that your hardware is struggling with the current video resolution. Consider resizing your input video to 640x480 for better performance.
+FPS Monitoring: we Monitor the FPS counter during operation. If the value drops significantly (e.g., below 20 FPS), it may indicate that our hardware is struggling with the current video resolution. we will Consider resizing our input video to 640x480 for better performance.
 Video Format: The code is optimized for .mp4 files. Ensure your video has a steady framerate for the best Kalman Filter performance.
 Handling Occlusion: If you notice a minor drift during a very long occlusion, simply pause the video and re-select the target, or adjust the MAX_ALLOWED_JUMP threshold in the code if your video has faster-moving traffic.
 Environment: If the tracker fails to initialize, ensure that you have opencv-contrib-python installed, as standard OpenCV builds often exclude the legacy tracking modules.
