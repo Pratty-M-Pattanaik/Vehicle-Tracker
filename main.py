@@ -1,12 +1,12 @@
 import cv2
 import sys
 import numpy as np
+import time
 
 # CHOOSE THE REQUIRED VIDEO HERE
-video_path = "car_3.mp4" 
+video_path = "car_inter.mp4" 
 
 # SETUP AND VIDEO LOADING
-
 cap = cv2.VideoCapture(video_path)
 
 if not cap.isOpened():
@@ -16,9 +16,7 @@ if not cap.isOpened():
 for _ in range(2):
     ret, frame = cap.read()
 
-
 # TARGET SELECTION 
-
 window_name = f"SELECT TARGET FOR {video_path.upper()}"
 cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
 
@@ -51,19 +49,11 @@ ORIGINAL_H = int(bbox[3])
 
 tracker = reset_tracker(frame, bbox[0] + bbox[2]/2, bbox[1] + bbox[3]/2, ORIGINAL_W, ORIGINAL_H)
 
-# KALMAN FILTER (HEAVY MOMENTUM)
-
+# KALMAN FILTER
 kf = cv2.KalmanFilter(4, 2)
-kf.transitionMatrix = np.array([[1, 0, 1, 0],
-                                [0, 1, 0, 1],
-                                [0, 0, 1, 0],
-                                [0, 0, 0, 1]], dtype=np.float32)
-kf.measurementMatrix = np.array([[1, 0, 0, 0],
-                                 [0, 1, 0, 0]], dtype=np.float32)
- 
-# Extremely low process noise = "I believe the bus moves in a perfect, smooth straight line"
+kf.transitionMatrix = np.array([[1, 0, 1, 0], [0, 1, 0, 1], [0, 0, 1, 0], [0, 0, 0, 1]], dtype=np.float32)
+kf.measurementMatrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0]], dtype=np.float32)
 kf.processNoiseCov = np.eye(4, dtype=np.float32) * 0.001 
-# Very high measurement noise = "I do not trust the visual tracker when it makes sudden jerks"
 kf.measurementNoiseCov = np.eye(2, dtype=np.float32) * 10.0 
 kf.errorCovPost = np.eye(4, dtype=np.float32)
 
@@ -73,15 +63,20 @@ kf.statePost = np.array([[init_cx], [init_cy], [0], [0]], dtype=np.float32)
 
 cooldown_counter = 0
 is_occluded = False
+prev_time = 0
 
 # LIVE TRACKING & FUSION LOOP
-
 print("\n[STATUS]: Press 'q' to stop.")
 
 while True:
     ret, frame = cap.read()
     if not ret or frame is None:
         break
+    
+    # CALCULATE FPS
+    new_time = time.time()
+    fps = 1 / (new_time - prev_time) if (new_time - prev_time) > 0 else 0
+    prev_time = new_time
     
     # PREDICT
     prediction = kf.predict()
@@ -92,14 +87,11 @@ while True:
     
     # ANOMALY DETECTION
     forced_occlusion = False
-    
     if track_success:
         raw_x, raw_y, raw_w, raw_h = [int(v) for v in current_bbox]
         tracker_cx = raw_x + raw_w / 2
         tracker_cy = raw_y + raw_h / 2
-        
         jump_distance = np.sqrt((tracker_cx - pred_cx)**2 + (tracker_cy - pred_cy)**2)
-        
         if jump_distance > 15.0:
             forced_occlusion = True
             is_occluded = True
@@ -111,37 +103,30 @@ while True:
             is_occluded = False
             tracker = reset_tracker(frame, pred_cx, pred_cy, ORIGINAL_W, ORIGINAL_H)
             
-   # FUSION LOGIC
+    # FUSION LOGIC
     if track_success and not forced_occlusion and not is_occluded:
         w, h = ORIGINAL_W, ORIGINAL_H
         x = int(tracker_cx - w / 2)
         y = int(tracker_cy - h / 2)
-        
         kf.correct(np.array([[np.float32(tracker_cx)], [np.float32(tracker_cy)]]))
-
         source = "Object Tracker (Size Locked)"
-        t_conf = 1.00
-        m_conf = 0.70
-        color = (0, 255, 0) # Green
+        t_conf, m_conf = 1.00, 0.70
+        color = (0, 255, 0)
     else:
         w, h = ORIGINAL_W, ORIGINAL_H
         x = int(pred_cx - w / 2)
         y = int(pred_cy - h / 2)
-        
-        # Fallback physics state
         source = "Motion Model (Constant Velocity)"
-        t_conf = 0.00
-        m_conf = 0.95
-        color = (0, 165, 255) # Orange
+        t_conf, m_conf = 0.00, 0.95
+        color = (0, 165, 255)
     
-    # TRY TO Draw the bounding box
+    # DRAWING
     cv2.rectangle(frame, (x, y), (x + w, y + h), color, 3)
-    
-    # TRY TO Draw the specific text lines matching the reference image
-    cv2.putText(frame, f"Trusted Source: {source}", (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
-    cv2.putText(frame, f"Bounding Box State: [x:{x}, y:{y}, w:{w}, h:{h}]", (15, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-    cv2.putText(frame, f"Tracker Conf: {t_conf:.2f}", (15, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-    cv2.putText(frame, f"Motion Model Conf: {m_conf:.2f}", (15, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    cv2.putText(frame, f"FPS: {int(fps)}", (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+    cv2.putText(frame, f"Source: {source}", (15, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+    cv2.putText(frame, f"BBox: [x:{x}, y:{y}, w:{w}, h:{h}]", (15, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    cv2.putText(frame, f"Tracker Conf: {t_conf:.2f}", (15, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    cv2.putText(frame, f"Motion Conf: {m_conf:.2f}", (15, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
     
     cv2.imshow("Fused Vehicle Tracker", frame)
     if cv2.waitKey(30) & 0xFF == ord('q'):
